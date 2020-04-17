@@ -4,13 +4,16 @@ using System.Diagnostics;
 
 public class Sudo
 {
-    public static void Main()
+    public static void Main(string[] args)
     {
-        Console.WriteLine("something");
-
+        if (args.Length < 1)
+        {
+            Console.WriteLine("no program specified");
+            return;
+        } 
         ProcessStartInfo processInfo = new ProcessStartInfo();
         processInfo.Verb = "runas";
-        processInfo.FileName = "notepad.exe";
+        processInfo.FileName = args[0];
         try
         {
             Process.Start(processInfo);
