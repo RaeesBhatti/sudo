@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Security;
 
 public class Sudo
 {
@@ -10,17 +11,57 @@ public class Sudo
         {
             Console.WriteLine("no program specified");
             return;
-        } 
-        ProcessStartInfo processInfo = new ProcessStartInfo();
-        processInfo.Verb = "runas";
-        processInfo.FileName = args[0];
-        try
+        };
+
+        string[] processArguments = new string[args.Length];
+        for (int i = 1; i < args.Length; i++)
         {
-            Process.Start(processInfo);
+            processArguments[i] = args[i];
         }
-        catch (Win32Exception)
+
+        SecureString pass = new SecureString();
+
+        do
         {
-            //Do nothing. Probably the user canceled the UAC window
-        }
+            ConsoleKeyInfo key = Console.ReadKey(true);
+            // Backspace Should Not Work
+            if (key.Key != ConsoleKey.Backspace && key.Key != ConsoleKey.Enter)
+            {
+                pass.AppendChar(key.KeyChar);
+                Console.Write("*");
+            }
+            else
+            {
+                if (key.Key == ConsoleKey.Backspace && pass.Length > 0)
+                {
+                    pass.RemoveAt(pass.Length - 1);
+                    Console.Write("\b \b");
+                }
+                else if (key.Key == ConsoleKey.Enter)
+                {
+                    break;
+                }
+            }
+        } while (true);
+
+        Console.Write(new string(' ', Console.WindowWidth));
+        Console.SetCursorPosition(0, Console.CursorTop - 1);
+
+        ProcessStartInfo processInfo = new ProcessStartInfo {
+            FileName = args[0],
+            Domain = Environment.MachineName,
+            UserName = System.Environment.UserName,
+            Password = pass,
+            Arguments = String.Join(" ", processArguments),
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+            RedirectStandardInput = true,
+        };
+        Process process = Process.Start(processInfo);
+        Console.WriteLine(process.StandardOutput.ReadToEnd());
+        Console.Error.WriteLine(process.StandardError.ReadToEnd());
+        process.WaitForExit();
     }
 }
