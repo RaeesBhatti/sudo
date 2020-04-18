@@ -54,14 +54,15 @@ public class Sudo
             Password = pass,
             Arguments = String.Join(" ", processArguments),
             UseShellExecute = false,
-            CreateNoWindow = true,
             RedirectStandardError = true,
             RedirectStandardOutput = true,
             RedirectStandardInput = true,
         };
         Process process = Process.Start(processInfo);
-        Console.WriteLine(process.StandardOutput.ReadToEnd());
-        Console.Error.WriteLine(process.StandardError.ReadToEnd());
+        process.OutputDataReceived += (sender, e) => Console.WriteLine(e.Data);
+        process.ErrorDataReceived += (sender, e) => Console.Error.WriteLine(e.Data);
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
         process.WaitForExit();
     }
 }
